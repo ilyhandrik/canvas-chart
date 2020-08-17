@@ -90,7 +90,6 @@ class CanvasChart {
     animate() {
         this.alignSegments();
         this.animation.startTime = performance.now();
-        this.animation.completed = false;
         this.animation.requestFrameId = requestAnimationFrame(this.tick);
     }
 
