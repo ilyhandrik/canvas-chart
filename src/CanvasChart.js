@@ -12,6 +12,8 @@ class CanvasChart {
         this.animation = {
             from: null,
             to: null,
+            current: null,
+            requestFrameId: null,
             startTime: 0,
         };
 
@@ -41,6 +43,10 @@ class CanvasChart {
         );
         this.rawData = data;
         if (this.lastPoints) {
+            if (this.animation.current) {
+                cancelAnimationFrame(this.animation.requestFrameId);
+                this.lastPoints = this.animation.current;
+            }
             this.animate();
         } else {
             this.lastPoints = this.currentPoints;
@@ -84,20 +90,23 @@ class CanvasChart {
     animate() {
         this.alignSegments();
         this.animation.startTime = performance.now();
-        requestAnimationFrame(this.tick);
+        this.animation.completed = false;
+        this.animation.requestFrameId = requestAnimationFrame(this.tick);
     }
 
     // Выполняется для каждого кадра анимации перехода, анимация линейная
     tick(time) {
         const timeFraction = (time - this.animation.startTime) / this.options.animationDuration;
-        this.render(this.animation.to.map((point, i) => ({
+        this.animation.current = this.animation.to.map((point, i) => ({
             x: this.animation.from[i].x + (point.x - this.animation.from[i].x) * timeFraction,
             y: this.animation.from[i].y + (point.y - this.animation.from[i].y) * timeFraction,
-        })));
+        }));
+        this.render(this.animation.current);
         if (timeFraction < 1) {
-            requestAnimationFrame(this.tick);
+            this.animation.requestFrameId = requestAnimationFrame(this.tick);
         } else {
             this.lastPoints = this.currentPoints;
+            this.animation.current = null;
 
             // По завершении анимации делаем еще одну отрисовку без лишних точек
             this.render(this.currentPoints);
